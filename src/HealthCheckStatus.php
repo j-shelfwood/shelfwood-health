@@ -6,7 +6,7 @@ namespace Shelfwood\Health;
  * Status of a single health check, and of the run as a whole.
  *
  * The string values are part of the public JSON contract consumed by
- * monitor.shelfwood.co - do not rename them.
+ * external monitoring dashboards - do not rename them.
  */
 enum HealthCheckStatus: string
 {

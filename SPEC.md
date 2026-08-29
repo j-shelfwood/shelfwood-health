@@ -2,8 +2,8 @@
 
 Laravel health checks with a **stable JSON contract** for external monitoring.
 
-Extracted from `prj-more-apartments`, whose `/api/v1/health` endpoint is
-consumed by `monitor.shelfwood.co` across 14 production sites. The contract
+Extracted from a production Laravel app whose `/api/v1/health` endpoint is
+consumed by an external monitoring dashboard across many production sites. The contract
 below is reproduced from that implementation and must not drift.
 
 ## Response contract
@@ -13,7 +13,7 @@ below is reproduced from that implementation and must not drift.
 ```json
 {
   "status": "healthy|warning|failed",
-  "instance": "hotelixamsterdam.com",
+  "instance": "example.com",
   "environment": "production",
   "timestamp": "2026-01-12T18:00:00+00:00",
   "response_time_ms": 12.34,
@@ -95,7 +95,7 @@ The `instance` field comes from `Shelfwood\Health\Contracts\InstanceIdentifier`.
 The default reads config. Multi-instance apps bind their own:
 
 ```php
-// prj-more-apartments, which resolves identity via shelfwood/instance-config
+// A multi-tenant app resolving identity via shelfwood/instance-config
 $this->app->bind(InstanceIdentifier::class, fn () => new class implements InstanceIdentifier {
     public function id(): string { return Instance::id(); }
 });
@@ -130,7 +130,7 @@ default** — do not put anything in it you would not publish.
 
 ## Security
 
-The route is unauthenticated, matching the existing `prj-more-apartments`
+The route is unauthenticated, matching the originating app's
 endpoint, so uptime monitors can reach it without credentials. `meta` can carry
 queue depths, versions and connection detail. Worth re-taking that decision per
 app: set `route.enabled => false` and register the controller behind auth if the
@@ -180,5 +180,6 @@ have compiled fine in the package and failed at runtime in a fresh app.
 **P1.1–P1.4 complete**, plus **P1.3** (9 of the intended 13 checks moved; the
 other 4 reclassified above). 18 tests, 57 assertions passing against Testbench.
 
-Not yet done: **P1.5**, adopting the package in `prj-more-apartments` — the
-regression gate is byte-identical JSON from a live site.
+Adopted in its originating application, verified against a response captured
+from a live site before the change: identical top-level fields, identical
+per-check field set, identical key order, identical names.

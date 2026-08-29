@@ -26,7 +26,7 @@ return [
     | yourself (different prefix, extra middleware, auth, ...).
     |
     | NOTE: unauthenticated by default, matching the existing
-    | prj-more-apartments endpoint. `meta` can carry detail you may not want
+    | originating app's endpoint. `meta` can carry detail you may not want
     | public (queue depths, versions) - worth re-taking that decision per app.
     |
     */
@@ -44,7 +44,7 @@ return [
     |
     | The "instance" field. Null derives it from config('app.url')'s host.
     | Multi-instance apps bind their own Shelfwood\Health\Contracts\
-    | InstanceIdentifier instead (prj-more-apartments uses Instance::id()).
+    | InstanceIdentifier instead (e.g. a multi-tenant app using Instance::id()).
     |
     */
     'instance' => env('HEALTH_INSTANCE'),

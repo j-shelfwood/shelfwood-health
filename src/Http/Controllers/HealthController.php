@@ -12,13 +12,13 @@ use Shelfwood\Health\HealthCheckStatus;
 /**
  * Health API endpoint for infrastructure monitoring.
  *
- * RESPONSE CONTRACT - consumed by monitor.shelfwood.co, which keys off
+ * RESPONSE CONTRACT - consumed by external monitoring, which keys off
  * `checks[].key`. Adding fields is safe; renaming or removing them is a
  * breaking change for every consumer. See SPEC.md.
  *
  * {
  *   "status": "healthy|warning|failed",
- *   "instance": "hotelixamsterdam.com",
+ *   "instance": "example.com",
  *   "environment": "production",
  *   "timestamp": "2026-01-12T18:00:00+00:00",
  *   "response_time_ms": 12.34,

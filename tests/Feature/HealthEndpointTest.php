@@ -100,9 +100,9 @@ it('derives the instance from app.url by default', function () {
 
 it('prefers an explicitly configured instance', function () {
     config()->set('health.checks', []);
-    config()->set('health.instance', 'hotelixamsterdam.com');
+    config()->set('health.instance', 'example.com');
 
-    $this->getJson('/api/v1/health')->assertJsonPath('instance', 'hotelixamsterdam.com');
+    $this->getJson('/api/v1/health')->assertJsonPath('instance', 'example.com');
 });
 
 it('is healthy with no checks registered', function () {
