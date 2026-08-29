@@ -136,11 +136,49 @@ queue depths, versions and connection detail. Worth re-taking that decision per
 app: set `route.enabled => false` and register the controller behind auth if the
 detail is sensitive.
 
+## Shipped checks
+
+Nine generic checks, bound with real config by the service provider:
+
+| Class | key |
+|---|---|
+| `DatabaseHealthCheck` | `database` |
+| `DatabaseWriteHealthCheck` | `database-write` |
+| `RedisHealthCheck` | `redis` |
+| `CacheHealthCheck` | `cache` |
+| `SessionHealthCheck` | `session` |
+| `StorageHealthCheck` | `storage` |
+| `MetricsCacheHealthCheck` | `metrics-cache` |
+| `SentryHealthCheck` | `sentry` |
+| `MattermostHealthCheck` | `mattermost` |
+
+**Every one is bound, not autowired.** They all take nullable constructor args,
+so an unbound check resolves with all-null config and reports confident
+nonsense — `DatabaseHealthCheck` would fall back to the literal `'sqlite'` and
+"successfully" report a connection it never verified against the right config.
+Bindings use `bindIf`, so an app can override any single one.
+
+`StorageHealthCheck` reads `config('health.storage_disks')`, default
+`['local', 'public']`.
+
+### Deliberately NOT shipped
+
+Four checks were in the extraction plan and were dropped after reading them:
+
+| Check | Why it stays in the app |
+|---|---|
+| `QueueHealthCheck` | Takes `ScheduledJobActivityTracker`, an app class |
+| `SchedulerHealthCheck` | Depends on `App\Models\SystemHeartbeat`, an app Eloquent model |
+| `BrevoHealthCheck` | Uses `Instance::services()` / `Instance::mail()` — the instance-config dependency this package deliberately avoids |
+| `BackupHealthCheck` | Assumes **Spatie Laravel Backup**; shipping it would break every app without that package |
+
+A generic-looking filename is not evidence a check is generic. All four would
+have compiled fine in the package and failed at runtime in a fresh app.
+
 ## Status
 
-**P1.1–P1.4 complete** (scaffold, contract types, controller, route, config).
-14 tests, 47 assertions passing against Testbench.
+**P1.1–P1.4 complete**, plus **P1.3** (9 of the intended 13 checks moved; the
+other 4 reclassified above). 18 tests, 57 assertions passing against Testbench.
 
-Not yet done: **P1.3** moving the 13 generic checks from `prj-more-apartments`,
-and **P1.5** adopting the package there — the regression gate for which is
-byte-identical JSON from a live site.
+Not yet done: **P1.5**, adopting the package in `prj-more-apartments` — the
+regression gate is byte-identical JSON from a live site.
