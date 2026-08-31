@@ -35,11 +35,12 @@ class HealthServiceProvider extends ServiceProvider
     /**
      * Bind the shipped checks with their config.
      *
-     * These MUST be bound rather than left to zero-config autowiring: every
-     * check takes nullable constructor args, so an unbound one resolves with
-     * all-null config and reports confident nonsense (e.g. DatabaseHealthCheck
-     * falls back to 'sqlite', CacheHealthCheck warns that redis is not the
-     * driver). It would look like it worked.
+     * Bindings are the primary path for explicit config. Since v1.0.1 the
+     * checks themselves also fall back to live config on null args
+     * (config('database.default') etc.), because container resolution can
+     * bypass these bindings: a class_alias shim resolves against the
+     * canonical class name, not the alias, and before v1.0.1 that produced
+     * confident nonsense against hardcoded defaults.
      *
      * bindIf throughout, so an app can override any single binding.
      */

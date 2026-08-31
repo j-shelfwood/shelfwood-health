@@ -152,11 +152,14 @@ Nine generic checks, bound with real config by the service provider:
 | `SentryHealthCheck` | `sentry` |
 | `MattermostHealthCheck` | `mattermost` |
 
-**Every one is bound, not autowired.** They all take nullable constructor args,
-so an unbound check resolves with all-null config and reports confident
-nonsense — `DatabaseHealthCheck` would fall back to the literal `'sqlite'` and
-"successfully" report a connection it never verified against the right config.
-Bindings use `bindIf`, so an app can override any single one.
+**Every one is bound, not autowired**, and since v1.0.1 every check ALSO
+falls back to live config when constructed with null args
+(`config('database.default')`, `config('cache.default')`, …). The bindings
+remain the primary path — but a resolution that bypasses them (a
+`class_alias` shim resolves against the canonical class name, not the alias;
+found in the wild 2026-08-31) now reads the app's real config instead of
+reporting confident nonsense against hardcoded defaults. Bindings use
+`bindIf`, so an app can override any single one.
 
 `StorageHealthCheck` reads `config('health.storage_disks')`, default
 `['local', 'public']`.
