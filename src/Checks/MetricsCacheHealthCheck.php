@@ -58,7 +58,14 @@ class MetricsCacheHealthCheck extends HealthCheck
         }
 
         // Test read/write operations
+        // One transient latency blip must not fail the whole health document
+        // (observed 2026-08-31: staging redis answered slow for ~40 min and
+        // every monitor sample during it paged as "failed"). Retry once.
         $operationsTest = $this->testCacheOperations();
+        if (! $operationsTest['success']) {
+            usleep(250_000);
+            $operationsTest = $this->testCacheOperations();
+        }
 
         if (! $operationsTest['success']) {
             return HealthCheckResult::failed(
