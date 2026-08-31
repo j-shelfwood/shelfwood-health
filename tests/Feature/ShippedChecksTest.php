@@ -66,3 +66,33 @@ it('lets an app override a shipped binding', function () {
 
     expect($meta['key'])->toBe('cache');
 });
+
+// Unbound (or class_alias-resolved) instances get all-null constructor args.
+// They must fall back to live config, not report "not configured" nonsense —
+// an alias-resolved RedisHealthCheck once flagged a whole estate degraded.
+it('redis check falls back to live config when constructed with nulls', function () {
+    config(['cache.default' => 'redis', 'database.redis.default.host' => '127.0.0.1', 'database.redis.default.port' => 6379]);
+    Illuminate\Support\Facades\Redis::shouldReceive('ping')->once()->andReturn('PONG');
+
+    $result = (new Shelfwood\Health\Checks\RedisHealthCheck)->check();
+
+    expect($result->status)->toBe(Shelfwood\Health\HealthCheckStatus::Healthy)
+        ->and($result->meta['host'])->toBe('127.0.0.1');
+});
+
+it('redis check still warns on a genuinely non-redis cache driver', function () {
+    config(['cache.default' => 'file']);
+
+    $result = (new Shelfwood\Health\Checks\RedisHealthCheck)->check();
+
+    expect($result->status)->toBe(Shelfwood\Health\HealthCheckStatus::Warning)
+        ->and($result->meta['current_driver'])->toBe('file');
+});
+
+it('database check reads the configured default connection when unbound', function () {
+    config(['database.default' => 'sqlite']);
+
+    $result = (new Shelfwood\Health\Checks\DatabaseHealthCheck)->check();
+
+    expect($result->message)->toContain('sqlite');
+});

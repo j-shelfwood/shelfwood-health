@@ -39,7 +39,8 @@ class DatabaseHealthCheck extends HealthCheck
     #[\Override]
     public function check(): HealthCheckResult
     {
-        $connection = $this->defaultConnection ?? 'sqlite';
+        $connection = $this->defaultConnection ?? config('database.default', 'sqlite');
+        $connectionConfig = $this->connectionConfig ?? config("database.connections.{$connection}");
 
         try {
             DB::connection()->getPdo();
@@ -48,7 +49,7 @@ class DatabaseHealthCheck extends HealthCheck
                 'driver' => $connection,
                 'database' => $connection === 'sqlite'
                     ? $this->databasePath
-                    : $this->connectionConfig['database'] ?? 'unknown',
+                    : $connectionConfig['database'] ?? 'unknown',
             ]);
         } catch (\Exception $e) {
             return HealthCheckResult::failed($this->name(), "Connection failed: {$e->getMessage()}");

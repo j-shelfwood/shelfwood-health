@@ -38,9 +38,15 @@ class RedisHealthCheck extends HealthCheck
             return HealthCheckResult::healthy($this->name(), 'Skipping in testing environment');
         }
 
-        if ($this->cacheDriver !== 'redis') {
+        // Null args mean "not provided" (unbound or alias-resolved instance);
+        // fall back to live config instead of reporting confident nonsense —
+        // a null driver used to produce a false "not configured" warning that
+        // marked every uptime monitor of an estate degraded.
+        $driver = $this->cacheDriver ?? config('cache.default');
+
+        if ($driver !== 'redis') {
             return HealthCheckResult::warning($this->name(), 'Redis not configured as cache driver', [
-                'current_driver' => $this->cacheDriver,
+                'current_driver' => $driver,
             ]);
         }
 
@@ -48,8 +54,8 @@ class RedisHealthCheck extends HealthCheck
             Redis::ping();
 
             return HealthCheckResult::healthy($this->name(), 'Connection successful', [
-                'host' => $this->redisHost,
-                'port' => $this->redisPort,
+                'host' => $this->redisHost ?? config('database.redis.default.host'),
+                'port' => $this->redisPort ?? config('database.redis.default.port'),
             ]);
         } catch (\Exception $e) {
             return HealthCheckResult::failed($this->name(), "Connection failed: {$e->getMessage()}");
