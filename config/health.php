@@ -19,6 +19,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Metrics Providers
+    |--------------------------------------------------------------------------
+    |
+    | Classes implementing Contracts\MetricsProvider. Their merged map is
+    | added to the response as `metrics` — business numbers with no status,
+    | never affecting the overall result. Threshold via a check instead when
+    | a number should be able to alert.
+    |
+    */
+    'metrics' => [
+        // App\Health\KpiMetrics::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Route
     |--------------------------------------------------------------------------
     |
@@ -35,6 +50,12 @@ return [
         'uri' => 'api/v1/health',
         'name' => 'api.health',
         'middleware' => ['throttle:health'],
+
+        // Set (e.g. env('HEALTH_SECRET')) and add
+        // Shelfwood\Health\Http\Middleware\VerifyHealthSecret to the
+        // middleware above to gate the document with an x-cron-secret
+        // header — the monitor's ops-health convention.
+        'secret' => null,
     ],
 
     /*

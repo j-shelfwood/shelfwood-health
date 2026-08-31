@@ -26,8 +26,14 @@ use Shelfwood\Health\HealthCheckStatus;
  *     {"key": "database", "name": "Database", "raw_name": "📝 Database",
  *      "status": "healthy", "message": "Connected", "meta": null}
  *   ],
- *   "summary": {"total": 10, "healthy": 9, "warning": 1, "failed": 0}
+ *   "summary": {"total": 10, "healthy": 9, "warning": 1, "failed": 0},
+ *   "metrics": {"tenants": 12, "uploads_7d": 340},          // only when providers configured
+ *   "metrics_errors": ["App\Health\KpiMetrics: <reason>"] // only when a provider threw
  * }
+ *
+ * `metrics` carries statuses-free business numbers from health.metrics
+ * providers (Contracts\MetricsProvider). They never affect `status` or the
+ * HTTP code.
  *
  * HTTP status is 200 for healthy AND warning (a warning is still "up"), and
  * 503 for failed. Monitors distinguish degraded from down by the body, not
@@ -50,6 +56,8 @@ class HealthController
 
         $overallStatus = $this->determineOverallStatus($summary);
 
+        [$metrics, $metricsErrors] = $this->collectMetrics();
+
         $response = [
             'status' => $overallStatus,
             'instance' => App::make(InstanceIdentifier::class)->id(),
@@ -66,6 +74,13 @@ class HealthController
             ])->values()->toArray(),
             'summary' => $summary,
         ];
+
+        if ($metrics !== []) {
+            $response['metrics'] = $metrics;
+        }
+        if ($metricsErrors !== []) {
+            $response['metrics_errors'] = $metricsErrors;
+        }
 
         $httpStatus = match ($overallStatus) {
             'healthy' => 200,
@@ -108,6 +123,27 @@ class HealthController
                     );
                 }
             });
+    }
+
+    /**
+     * Run every configured metrics provider. A provider that throws must not
+     * take the endpoint down; its failure is listed in metrics_errors.
+     *
+     * @return array{0: array<string, int|float|string>, 1: list<string>}
+     */
+    protected function collectMetrics(): array
+    {
+        $metrics = [];
+        $errors = [];
+        foreach (config('health.metrics', []) as $class) {
+            try {
+                $metrics = array_merge($metrics, App::make($class)->metrics());
+            } catch (\Throwable $e) {
+                $errors[] = $class.': '.$e->getMessage();
+            }
+        }
+
+        return [$metrics, $errors];
     }
 
     protected function determineOverallStatus(array $summary): string
