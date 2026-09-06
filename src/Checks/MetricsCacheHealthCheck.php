@@ -100,7 +100,7 @@ class MetricsCacheHealthCheck extends HealthCheck
     private function testCacheOperations(): array
     {
         try {
-            $key = 'health:metrics_cache_test:'.time();
+            $key = 'health:metrics_cache_test:'.bin2hex(random_bytes(8));
             $value = 'test-value-'.uniqid();
 
             Cache::store('metrics')->put($key, $value, 60);
