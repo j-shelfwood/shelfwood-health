@@ -116,7 +116,7 @@ class CacheHealthCheck extends HealthCheck
     private function testCacheOperations(): array
     {
         try {
-            $key = 'health-check-'.time();
+            $key = 'health-check-'.bin2hex(random_bytes(8));
             $value = 'test-value';
 
             Cache::put($key, $value, 60);
@@ -200,7 +200,7 @@ class CacheHealthCheck extends HealthCheck
     private function validateMemcachedCache(): array
     {
         try {
-            $testKey = 'memcached-health-'.time();
+            $testKey = 'memcached-health-'.bin2hex(random_bytes(8));
             Cache::put($testKey, 'test', 1);
             Cache::forget($testKey);
 
