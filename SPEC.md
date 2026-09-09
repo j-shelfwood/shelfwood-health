@@ -125,16 +125,48 @@ class RedisHealthCheck extends HealthCheck
 }
 ```
 
-`meta` is free-form and passed through untouched. **It is unauthenticated by
-default** — do not put anything in it you would not publish.
+`meta` is free-form and passed through untouched — do not put anything in it
+you would not publish, unless the route is gated (see below).
 
 ## Security
 
-The route is unauthenticated, matching the originating app's
-endpoint, so uptime monitors can reach it without credentials. `meta` can carry
-queue depths, versions and connection detail. Worth re-taking that decision per
-app: set `route.enabled => false` and register the controller behind auth if the
-detail is sensitive.
+**Gate the route. Every app in the estate does.** The package still defaults to
+`route.secret => null` and no auth middleware, for backward compatibility with
+the originating app's endpoint, but that default is no longer what anyone runs.
+
+The document is not a status page. It names the internal stack (which of
+Redis/Stripe/Sentry/queue/scheduler are wired), and `meta` carries connection
+detail, queue depths and versions. Real example: the More Apartments document
+was public until 2026-09-09 and exposed funnel volume ("329 searches (7d) · 86
+today"), property counts, backup posture and the exact deploy SHA across 14
+domains — a competitor's demand dashboard and an attacker's pre-work in one
+request.
+
+To gate it, set the secret and add the middleware:
+
+```php
+'route' => [
+    'enabled' => true,
+    'uri' => 'api/ops/health',
+    'middleware' => ['throttle:health', VerifyHealthSecret::class],
+    'secret' => env('OPS_HEALTH_SECRET'),
+],
+```
+
+Callers then send `x-cron-secret: <secret>`; comparison is timing-safe.
+
+**Trap:** `VerifyHealthSecret` reads `config('health.route.secret')`
+*regardless of* `route.enabled`, and returns **503** `health secret not
+configured` when it is null — it fails closed rather than falling open. An app
+that registers its own route (`enabled => false`) and attaches the middleware
+by hand still has to set `secret`, or every caller gets a 503.
+
+Status codes: **401** wrong/missing secret, **503** secret not configured *or*
+the app's own checks are failing (503 is the health contract's own "I am
+failing" code, so read the body rather than treating it as an auth error).
+
+Uptime monitors should probe a separate unauthenticated liveness route
+(`/api/v1/ping` or `/up`), never this document.
 
 ## Shipped checks
 

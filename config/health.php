@@ -40,9 +40,12 @@ return [
     | Set 'enabled' => false to register nothing and wire the controller up
     | yourself (different prefix, extra middleware, auth, ...).
     |
-    | NOTE: unauthenticated by default, matching the existing
-    | originating app's endpoint. `meta` can carry detail you may not want
-    | public (queue depths, versions) - worth re-taking that decision per app.
+    | NOTE: unauthenticated by default for backward compatibility, but every
+    | app in the estate gates this document — set 'secret' below and add
+    | VerifyHealthSecret to 'middleware'. The document names the internal stack
+    | and `meta` carries queue depths, versions and connection detail; the More
+    | Apartments endpoint was public until 2026-09-09 and leaked funnel volume
+    | and property counts across 14 domains. See SPEC.md "Security".
     |
     */
     'route' => [
