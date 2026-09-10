@@ -32,4 +32,14 @@ class HealthCheckResult
     {
         return new self($name, $message, HealthCheckStatus::Failed, $meta, $key);
     }
+
+    /**
+     * The check ran but had nothing to judge. Use this instead of healthy()
+     * when an empty sample would otherwise be indistinguishable from a clean
+     * one, and instead of warning() when quiet is the expected state.
+     */
+    public static function unknown(string $name, string $message, ?array $meta = null, ?string $key = null): self
+    {
+        return new self($name, $message, HealthCheckStatus::Unknown, $meta, $key);
+    }
 }

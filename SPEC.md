@@ -22,7 +22,7 @@ below is reproduced from that implementation and must not drift.
       "key": "database",
       "name": "Database",
       "raw_name": "📝 Database",
-      "status": "healthy",
+      "status": "healthy|warning|failed|unknown",
       "message": "Connected",
       "meta": {"driver": "mysql"}
     }
@@ -30,6 +30,18 @@ below is reproduced from that implementation and must not drift.
   "summary": {"total": 10, "healthy": 9, "warning": 1, "failed": 0}
 }
 ```
+
+**`unknown` (per-check, added 1.2).** The check ran but had nothing to judge:
+no rows in its window, or the upstream it compares against returned nothing.
+Emit it with `HealthCheckResult::unknown()` whenever an empty sample would
+otherwise be indistinguishable from a verified-clean one. It is deliberately
+absent from `summary`, which counts only the three judged states, so an
+unknown can neither degrade a healthy run nor mask a failing one, and the
+top-level `status` never takes the value. Consumers that predate it fold an
+unrecognised string to unknown already.
+
+Prefer it over `warning()` when quiet is the expected state: a warning the
+reader learns to ignore is worse than no signal at all.
 
 **Compatibility rules.** Adding fields is safe. Renaming or removing them is a
 breaking change for every consumer. `checks[].key` is what monitors match on —
